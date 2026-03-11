@@ -1,5 +1,6 @@
 export type Brand = 'Froo' | 'Sweet Threads' | 'Prairie' | 'Soirée';
 export type Category = 'Baby' | 'Girls' | 'Boys' | 'Preteen' | 'Teen';
+export type Season = 'Spring' | 'Summer' | 'Fall' | 'Winter' | 'Resort' | 'Holiday';
 export type SampleSize = '2' | '6' | '8' | '16' | '18' | 'M';
 
 export interface BrandTheme {
@@ -70,6 +71,7 @@ export interface TechPackData {
   // Step 1
   brand?: Brand;
   category?: Category;
+  season?: Season;
   sampleSize?: SampleSize;
   sampleNumber?: string;
   inspirationImages: string[];

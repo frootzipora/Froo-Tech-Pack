@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useTechPackStore } from '@/store/techpack-store';
-import { Brand, Category, SampleSize, DesignNotes } from '@/lib/types';
+import { Brand, Category, Season, SampleSize, DesignNotes } from '@/lib/types';
 import { getNextSampleNumber } from '@/lib/sample-numbers';
 import { OptionButtons } from '@/components/ui/OptionButtons';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -24,6 +24,15 @@ const CATEGORIES: { label: string; value: Category }[] = [
   { label: 'Boys', value: 'Boys' },
   { label: 'Preteen', value: 'Preteen' },
   { label: 'Teen', value: 'Teen' },
+];
+
+const SEASONS: { label: string; value: Season }[] = [
+  { label: 'Spring', value: 'Spring' },
+  { label: 'Summer', value: 'Summer' },
+  { label: 'Fall', value: 'Fall' },
+  { label: 'Winter', value: 'Winter' },
+  { label: 'Resort', value: 'Resort' },
+  { label: 'Holiday', value: 'Holiday' },
 ];
 
 const SAMPLE_SIZES: { label: string; value: SampleSize }[] = [
@@ -186,7 +195,7 @@ export function Step1Intake() {
     setEditingNotes(false);
   };
 
-  const canProceedToAnalysis = uploadedImages.length > 0 && data.brand && data.category && data.sampleSize;
+  const canProceedToAnalysis = uploadedImages.length > 0 && data.brand && data.category && data.season && data.sampleSize;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -243,6 +252,16 @@ export function Step1Intake() {
             options={CATEGORIES}
             selected={data.category}
             onSelect={(v) => store.setCategory(v as Category)}
+          />
+        </div>
+
+        {/* Season */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Season</label>
+          <OptionButtons
+            options={SEASONS}
+            selected={data.season}
+            onSelect={(v) => store.setSeason(v as Season)}
           />
         </div>
 

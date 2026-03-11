@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { TechPackData, ChatMessage, StepStatus, Brand, Category, SampleSize, DesignNotes, FabricInfo, TrimInfo, GeneratedVisuals, SizeChart } from '@/lib/types';
+import { TechPackData, ChatMessage, StepStatus, Brand, Category, Season, SampleSize, DesignNotes, FabricInfo, TrimInfo, GeneratedVisuals, SizeChart } from '@/lib/types';
 import { v4 as uuid } from 'uuid';
 
 interface TechPackStore {
@@ -21,6 +21,7 @@ interface TechPackStore {
   // Actions - Step 1
   setBrand: (brand: Brand) => void;
   setCategory: (category: Category) => void;
+  setSeason: (season: Season) => void;
   setSampleSize: (size: SampleSize) => void;
   setSampleNumber: (num: string) => void;
   addInspirationImage: (url: string) => void;
@@ -96,6 +97,9 @@ export const useTechPackStore = create<TechPackStore>((set) => ({
 
   setCategory: (category) =>
     set((s) => ({ data: { ...s.data, category, updatedAt: new Date().toISOString() } })),
+
+  setSeason: (season) =>
+    set((s) => ({ data: { ...s.data, season, updatedAt: new Date().toISOString() } })),
 
   setSampleSize: (sampleSize) =>
     set((s) => ({ data: { ...s.data, sampleSize, updatedAt: new Date().toISOString() } })),

@@ -65,7 +65,7 @@ export function TechPackPreview() {
             <div className="text-right" style={{ color: colors.primaryText }}>
               <p className="text-sm opacity-80">TECH PACK</p>
               <p className="text-xs opacity-60">
-                {data.sampleNumber} — {data.category} — Size {data.sampleSize}
+                {data.sampleNumber} — {data.category} — {data.season || 'No season'} — Size {data.sampleSize}
               </p>
             </div>
           </div>
@@ -73,7 +73,7 @@ export function TechPackPreview() {
           {/* Content */}
           <div className="p-8" style={{ backgroundColor: colors.bodyBg }}>
             {/* Meta Row */}
-            <div className="grid grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-5 gap-4 mb-8">
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase">Sample #</p>
                 <p className="text-sm font-bold text-gray-900">{data.sampleNumber || '—'}</p>
@@ -85,6 +85,10 @@ export function TechPackPreview() {
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase">Category</p>
                 <p className="text-sm font-bold text-gray-900">{data.category || '—'}</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-gray-100">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase">Season</p>
+                <p className="text-sm font-bold text-gray-900">{data.season || '—'}</p>
               </div>
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase">Sample Size</p>

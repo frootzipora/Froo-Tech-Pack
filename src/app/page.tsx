@@ -62,7 +62,7 @@ export default function Home() {
                 <h1 className="text-base font-bold text-gray-900">Tech Pack Generator</h1>
                 {data.sampleNumber && (
                   <p className="text-xs text-gray-400">
-                    {data.sampleNumber} — {data.brand || 'No brand'} — {data.category || 'No category'}
+                    {data.sampleNumber} — {data.brand || 'No brand'} — {data.category || 'No category'} — {data.season || 'No season'}
                   </p>
                 )}
               </div>
