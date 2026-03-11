@@ -4,14 +4,20 @@ import React, { useRef } from 'react';
 import { useTechPackStore } from '@/store/techpack-store';
 import { getBrandColors } from '@/lib/brand-themes';
 import { Button } from '@/components/ui/Button';
-import { Download, FileText, Printer } from 'lucide-react';
+import { Download, FileText, Printer, ArrowLeft, Edit3 } from 'lucide-react';
+import { Brand } from '@/lib/types';
 
-export function TechPackPreview() {
+interface TechPackPreviewProps {
+  onBackToDashboard?: () => void;
+  onEditStep?: (step: number) => void;
+}
+
+export function TechPackPreview({ onBackToDashboard, onEditStep }: TechPackPreviewProps) {
   const { data } = useTechPackStore();
   const printRef = useRef<HTMLDivElement>(null);
 
-  const brand = data.brand || 'Froo';
-  const colors = getBrandColors(brand);
+  const brandValue = data.brand && data.brand !== 'TBD' ? data.brand : 'Froo';
+  const colors = getBrandColors(brandValue as Brand);
 
   const handlePrint = () => {
     window.print();
@@ -29,11 +35,30 @@ export function TechPackPreview() {
     );
   }
 
+  const displayBrand = data.brand || '\u2014';
+  const displaySeason = data.season || '\u2014';
+  const displayCategory = data.category || '\u2014';
+  const displaySampleSize = data.sampleSize || '\u2014';
+  const displayGarmentType = data.garmentType || '\u2014';
+  const displayFit = data.fit || '\u2014';
+  const displayClosure = data.closureType || '\u2014';
+  const displayWaist = data.waistType || '\u2014';
+
   return (
     <div className="max-w-4xl mx-auto">
       {/* Action Bar */}
       <div className="flex items-center justify-between mb-6 no-print">
-        <h2 className="text-lg font-semibold text-gray-900">Tech Pack Preview</h2>
+        <div className="flex items-center gap-3">
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+            </button>
+          )}
+          <h2 className="text-lg font-semibold text-gray-900">Tech Pack Preview</h2>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-2" /> Print
@@ -60,39 +85,69 @@ export function TechPackPreview() {
               className="text-2xl font-bold tracking-tight"
               style={{ color: colors.primaryText }}
             >
-              {brand}
+              {displayBrand}
             </h1>
             <div className="text-right" style={{ color: colors.primaryText }}>
               <p className="text-sm opacity-80">TECH PACK</p>
               <p className="text-xs opacity-60">
-                {data.sampleNumber} — {data.category} — {data.season || 'No season'} — Size {data.sampleSize}
+                {data.sampleNumber} \u2014 {displayCategory} \u2014 {displaySeason} \u2014 Size {displaySampleSize}
               </p>
             </div>
           </div>
 
+          {/* Edit Step 1 button */}
+          {onEditStep && (
+            <div className="px-8 pt-3 no-print">
+              <button
+                onClick={() => onEditStep(1)}
+                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+              >
+                <Edit3 className="w-3 h-3" /> Edit Intake
+              </button>
+            </div>
+          )}
+
           {/* Content */}
           <div className="p-8" style={{ backgroundColor: colors.bodyBg }}>
             {/* Meta Row */}
-            <div className="grid grid-cols-5 gap-4 mb-8">
+            <div className="grid grid-cols-4 gap-4 mb-4">
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase">Sample #</p>
-                <p className="text-sm font-bold text-gray-900">{data.sampleNumber || '—'}</p>
+                <p className="text-sm font-bold text-gray-900">{data.sampleNumber || '\u2014'}</p>
               </div>
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase">Brand</p>
-                <p className="text-sm font-bold text-gray-900">{data.brand || '—'}</p>
+                <p className="text-sm font-bold text-gray-900">{displayBrand}</p>
               </div>
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase">Category</p>
-                <p className="text-sm font-bold text-gray-900">{data.category || '—'}</p>
+                <p className="text-sm font-bold text-gray-900">{displayCategory}</p>
               </div>
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase">Season</p>
-                <p className="text-sm font-bold text-gray-900">{data.season || '—'}</p>
+                <p className="text-sm font-bold text-gray-900">{displaySeason}</p>
               </div>
+            </div>
+            <div className="grid grid-cols-5 gap-4 mb-8">
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase">Sample Size</p>
-                <p className="text-sm font-bold text-gray-900">{data.sampleSize || '—'}</p>
+                <p className="text-sm font-bold text-gray-900">{displaySampleSize}</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-gray-100">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase">Garment Type</p>
+                <p className="text-sm font-bold text-gray-900">{displayGarmentType}</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-gray-100">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase">Fit</p>
+                <p className="text-sm font-bold text-gray-900">{displayFit}</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-gray-100">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase">Closure</p>
+                <p className="text-sm font-bold text-gray-900">{displayClosure}</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-gray-100">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase">Waist</p>
+                <p className="text-sm font-bold text-gray-900">{displayWaist}</p>
               </div>
             </div>
 
@@ -115,16 +170,28 @@ export function TechPackPreview() {
               </div>
             )}
 
-            {/* Technical Flats Placeholder */}
+            {/* Technical Flats */}
             <div className="mb-8">
-              <h3 className="text-xs font-semibold uppercase mb-3" style={{ color: colors.accent }}>
-                Technical Flat Sketches
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-semibold uppercase" style={{ color: colors.accent }}>
+                  Technical Flat Sketches
+                </h3>
+                {onEditStep && (
+                  <button
+                    onClick={() => onEditStep(2)}
+                    className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 no-print"
+                  >
+                    <Edit3 className="w-3 h-3" /> Edit Visuals
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white border border-gray-200 rounded-xl p-8 text-center min-h-[200px] flex items-center justify-center">
                   <div>
                     <p className="text-sm font-medium text-gray-400">Front View</p>
-                    {data.visuals.technicalFlatFront ? (
+                    {data.visuals.technicalFlatFront && data.visuals.technicalFlatFront.startsWith('data:') ? (
+                      <img src={data.visuals.technicalFlatFront} alt="Front flat" className="mt-2 max-w-full rounded" />
+                    ) : data.visuals.technicalFlatFront ? (
                       <p className="text-xs text-green-500 mt-1">Generated</p>
                     ) : (
                       <p className="text-xs text-gray-300 mt-1">Pending generation</p>
@@ -134,7 +201,9 @@ export function TechPackPreview() {
                 <div className="bg-white border border-gray-200 rounded-xl p-8 text-center min-h-[200px] flex items-center justify-center">
                   <div>
                     <p className="text-sm font-medium text-gray-400">Back View</p>
-                    {data.visuals.technicalFlatBack ? (
+                    {data.visuals.technicalFlatBack && data.visuals.technicalFlatBack.startsWith('data:') ? (
+                      <img src={data.visuals.technicalFlatBack} alt="Back flat" className="mt-2 max-w-full rounded" />
+                    ) : data.visuals.technicalFlatBack ? (
                       <p className="text-xs text-green-500 mt-1">Generated</p>
                     ) : (
                       <p className="text-xs text-gray-300 mt-1">Pending generation</p>
@@ -144,7 +213,7 @@ export function TechPackPreview() {
               </div>
             </div>
 
-            {/* 3D Mockups Placeholder */}
+            {/* 3D Mockups */}
             <div className="mb-8">
               <h3 className="text-xs font-semibold uppercase mb-3" style={{ color: colors.accent }}>
                 3D Mockups
@@ -153,7 +222,9 @@ export function TechPackPreview() {
                 <div className="bg-white border border-gray-200 rounded-xl p-8 text-center min-h-[200px] flex items-center justify-center">
                   <div>
                     <p className="text-sm font-medium text-gray-400">Front View</p>
-                    {data.visuals.mockup3dFront ? (
+                    {data.visuals.mockup3dFront && data.visuals.mockup3dFront.startsWith('data:') ? (
+                      <img src={data.visuals.mockup3dFront} alt="Front mockup" className="mt-2 max-w-full rounded" />
+                    ) : data.visuals.mockup3dFront ? (
                       <p className="text-xs text-green-500 mt-1">Generated</p>
                     ) : (
                       <p className="text-xs text-gray-300 mt-1">Pending generation</p>
@@ -163,7 +234,9 @@ export function TechPackPreview() {
                 <div className="bg-white border border-gray-200 rounded-xl p-8 text-center min-h-[200px] flex items-center justify-center">
                   <div>
                     <p className="text-sm font-medium text-gray-400">Back View</p>
-                    {data.visuals.mockup3dBack ? (
+                    {data.visuals.mockup3dBack && data.visuals.mockup3dBack.startsWith('data:') ? (
+                      <img src={data.visuals.mockup3dBack} alt="Back mockup" className="mt-2 max-w-full rounded" />
+                    ) : data.visuals.mockup3dBack ? (
                       <p className="text-xs text-green-500 mt-1">Generated</p>
                     ) : (
                       <p className="text-xs text-gray-300 mt-1">Pending generation</p>
@@ -189,7 +262,7 @@ export function TechPackPreview() {
               </div>
             )}
 
-            {/* Factory Notes */}
+            {/* Factory Notes — includes design notes + clarifications merged */}
             {data.designNotes && (
               <div>
                 <h3 className="text-xs font-semibold uppercase mb-3" style={{ color: colors.accent }}>
@@ -220,23 +293,18 @@ export function TechPackPreview() {
                     <span className="text-gray-400 font-medium">Trims</span>
                     <span className="text-gray-700">{data.designNotes.trims}</span>
                   </div>
-                </div>
-              </div>
-            )}
 
-            {/* Clarifications */}
-            {Object.keys(data.clarifications).length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-xs font-semibold uppercase mb-3" style={{ color: colors.accent }}>
-                  Additional Notes
-                </h3>
-                <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2 text-sm">
-                  {Object.entries(data.clarifications).map(([q, a]) => (
-                    <div key={q}>
-                      <p className="text-xs text-gray-400">{q}</p>
-                      <p className="text-gray-700">{a}</p>
+                  {/* Clarifications merged into Factory Notes */}
+                  {Object.keys(data.clarifications).length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      {Object.entries(data.clarifications).map(([q, a]) => (
+                        <div key={q} className="grid grid-cols-[120px,1fr] gap-2 mb-1">
+                          <span className="text-gray-400 font-medium text-xs">{q}</span>
+                          <span className="text-gray-700">{a}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
@@ -256,14 +324,26 @@ export function TechPackPreview() {
               Fabric & Trims
             </h2>
             <p className="text-xs opacity-60" style={{ color: colors.primaryText }}>
-              {data.sampleNumber} — Page 2
+              {data.sampleNumber} \u2014 Page 2
             </p>
           </div>
+
+          {/* Edit Step 3 button */}
+          {onEditStep && (
+            <div className="px-8 pt-3 no-print">
+              <button
+                onClick={() => onEditStep(3)}
+                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+              >
+                <Edit3 className="w-3 h-3" /> Edit Fabric & Trims
+              </button>
+            </div>
+          )}
 
           <div className="p-8" style={{ backgroundColor: colors.bodyBg }}>
             {data.fabricStepSkipped ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-                <p className="text-sm font-medium text-yellow-800">TBD — Pending Fabric Selection</p>
+                <p className="text-sm font-medium text-yellow-800">TBD \u2014 Pending Fabric Selection</p>
                 <p className="text-xs text-yellow-600 mt-1">
                   This section will be completed when fabric details are available.
                 </p>
@@ -294,7 +374,10 @@ export function TechPackPreview() {
                             <p className="text-gray-500">Color: {data.baseFabric.color}</p>
                           )}
                           {data.baseFabric.vendorName && (
-                            <p className="text-gray-500">Vendor: {data.baseFabric.vendorName}</p>
+                            <p className="text-gray-500">Supplier: {data.baseFabric.vendorName}</p>
+                          )}
+                          {data.baseFabric.vendorContact && (
+                            <p className="text-gray-500">Contact: {data.baseFabric.vendorContact}</p>
                           )}
                           {data.baseFabric.factoryNote && (
                             <p className="text-gray-500 italic">Note: {data.baseFabric.factoryNote}</p>
@@ -304,7 +387,7 @@ export function TechPackPreview() {
                     </div>
                   ) : (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center text-sm text-yellow-700">
-                      TBD — Pending
+                      TBD \u2014 Pending
                     </div>
                   )}
                 </div>
@@ -327,7 +410,10 @@ export function TechPackPreview() {
                         <div className="text-sm space-y-1">
                           <p className="font-medium text-gray-900">{data.lining.description}</p>
                           {data.lining.vendorName && (
-                            <p className="text-gray-500">Vendor: {data.lining.vendorName}</p>
+                            <p className="text-gray-500">Supplier: {data.lining.vendorName}</p>
+                          )}
+                          {data.lining.vendorContact && (
+                            <p className="text-gray-500">Contact: {data.lining.vendorContact}</p>
                           )}
                           {data.lining.factoryNote && (
                             <p className="text-gray-500 italic">Note: {data.lining.factoryNote}</p>
@@ -336,8 +422,8 @@ export function TechPackPreview() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center text-sm text-yellow-700">
-                      TBD — Pending
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center text-sm text-gray-400">
+                      No lining
                     </div>
                   )}
                 </div>
@@ -355,7 +441,7 @@ export function TechPackPreview() {
                             <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Type</th>
                             <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Description</th>
                             <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Color</th>
-                            <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Vendor</th>
+                            <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Supplier</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -364,10 +450,13 @@ export function TechPackPreview() {
                               <td className="px-4 py-2 font-medium text-gray-900">{trim.trimType}</td>
                               <td className="px-4 py-2 text-gray-600">
                                 {trim.description}
-                                {trim.factoryNote && <span className="italic text-gray-400"> — {trim.factoryNote}</span>}
+                                {trim.factoryNote && <span className="italic text-gray-400"> \u2014 {trim.factoryNote}</span>}
                               </td>
-                              <td className="px-4 py-2 text-gray-600">{trim.color || '—'}</td>
-                              <td className="px-4 py-2 text-gray-600">{trim.vendorName || 'Factory'}</td>
+                              <td className="px-4 py-2 text-gray-600">{trim.color || '\u2014'}</td>
+                              <td className="px-4 py-2 text-gray-600">
+                                {trim.vendorName || 'Factory'}
+                                {trim.vendorContact && <span className="block text-xs text-gray-400">{trim.vendorContact}</span>}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -397,9 +486,21 @@ export function TechPackPreview() {
               Size & Measurement
             </h2>
             <p className="text-xs opacity-60" style={{ color: colors.primaryText }}>
-              {data.sampleNumber} — Page 3
+              {data.sampleNumber} \u2014 Page 3
             </p>
           </div>
+
+          {/* Edit Step 4 button */}
+          {onEditStep && (
+            <div className="px-8 pt-3 no-print">
+              <button
+                onClick={() => onEditStep(4)}
+                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+              >
+                <Edit3 className="w-3 h-3" /> Edit Size Chart
+              </button>
+            </div>
+          )}
 
           <div className="p-8" style={{ backgroundColor: colors.bodyBg }}>
             {data.sizeChart ? (
@@ -407,7 +508,7 @@ export function TechPackPreview() {
                 {data.sizeChart.name && (
                   <p className="text-sm font-medium text-gray-700 mb-3">
                     Chart: {data.sizeChart.name}
-                    {data.sampleSize && ` — Sample size: ${data.sampleSize}`}
+                    {data.sampleSize && data.sampleSize !== 'TBD' && ` \u2014 Sample size: ${data.sampleSize}`}
                   </p>
                 )}
 
@@ -441,7 +542,7 @@ export function TechPackPreview() {
                                 style={{
                                   borderColor: colors.border,
                                   backgroundColor:
-                                    data.sampleSize && data.sizeChart?.data?.[0][ci] === data.sampleSize
+                                    data.sampleSize && data.sampleSize !== 'TBD' && data.sizeChart?.data?.[0][ci] === data.sampleSize
                                       ? colors.secondary
                                       : ci === 0
                                       ? '#f9fafb'
@@ -470,7 +571,7 @@ export function TechPackPreview() {
               </div>
             ) : (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-                <p className="text-sm font-medium text-yellow-800">TBD — Pending Size Chart</p>
+                <p className="text-sm font-medium text-yellow-800">TBD \u2014 Pending Size Chart</p>
               </div>
             )}
           </div>
@@ -481,7 +582,7 @@ export function TechPackPreview() {
       {!isComplete && (
         <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4 text-center no-print">
           <p className="text-sm font-medium text-amber-800">
-            Draft — Some sections are pending completion
+            Draft \u2014 Some sections are pending completion
           </p>
         </div>
       )}

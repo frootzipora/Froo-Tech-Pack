@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTechPackStore } from '@/store/techpack-store';
 import { Button } from '@/components/ui/Button';
-import { Loader2, CheckCircle2, XCircle, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, ArrowRight, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 
 interface VisualAsset {
   id: string;
@@ -14,7 +14,7 @@ interface VisualAsset {
   imageData?: string;
 }
 
-export function Step2Visuals() {
+export function Step2Visuals({ onBack }: { onBack?: () => void }) {
   const store = useTechPackStore();
   const { data } = store;
   const [assets, setAssets] = useState<VisualAsset[]>([]);
@@ -24,14 +24,13 @@ export function Step2Visuals() {
 
   const initAssets = () => {
     const base: VisualAsset[] = [
-      { id: 'flat-front', label: 'Technical Flat — Front', type: 'flat-front', status: 'pending' },
-      { id: 'flat-back', label: 'Technical Flat — Back', type: 'flat-back', status: 'pending' },
-      { id: 'mockup-front', label: '3D Mockup — Front', type: 'mockup-front', status: 'pending' },
-      { id: 'mockup-back', label: '3D Mockup — Back', type: 'mockup-back', status: 'pending' },
+      { id: 'flat-front', label: 'Technical Flat \u2014 Front', type: 'flat-front', status: 'pending' },
+      { id: 'flat-back', label: 'Technical Flat \u2014 Back', type: 'flat-back', status: 'pending' },
+      { id: 'mockup-front', label: '3D Mockup \u2014 Front', type: 'mockup-front', status: 'pending' },
+      { id: 'mockup-back', label: '3D Mockup \u2014 Back', type: 'mockup-back', status: 'pending' },
       { id: 'remove-bg', label: 'Background Removal', type: 'remove-bg', status: 'pending' },
     ];
 
-    // Add detail callouts based on detected trims
     if (data.designNotes?.trims) {
       const trimList = data.designNotes.trims.split(',').map((t) => t.trim()).filter(Boolean);
       trimList.forEach((trim, i) => {
@@ -51,6 +50,7 @@ export function Step2Visuals() {
     if (assets.length === 0) {
       setAssets(initAssets());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const generateAll = async () => {
@@ -69,12 +69,13 @@ export function Step2Visuals() {
       const dataUrl = data.inspirationImages[0];
       const parts = dataUrl.split(',');
       imageBase64 = parts[1] || '';
-      // Extract MIME type from data URL (e.g., "data:image/png;base64")
       const mimeMatch = dataUrl.match(/^data:([^;]+);/);
       if (mimeMatch) {
         imageMediaType = mimeMatch[1];
       }
     }
+
+    let anyImageSuccess = false;
 
     for (let i = 0; i < currentAssets.length; i++) {
       const asset = currentAssets[i];
@@ -104,6 +105,7 @@ export function Step2Visuals() {
         const result = await res.json();
 
         const generatedImage = result.imageData || '';
+        if (generatedImage) anyImageSuccess = true;
 
         setAssets((prev) =>
           prev.map((a) =>
@@ -113,7 +115,6 @@ export function Step2Visuals() {
           )
         );
 
-        // Update store with visual references (actual image data URLs)
         const storeValue = generatedImage || 'generated';
         if (asset.type === 'flat-front') store.setVisuals({ technicalFlatFront: storeValue });
         else if (asset.type === 'flat-back') store.setVisuals({ technicalFlatBack: storeValue });
@@ -133,6 +134,11 @@ export function Step2Visuals() {
 
     setIsGenerating(false);
     setAllDone(true);
+
+    // Store whether we got any real images
+    if (!anyImageSuccess) {
+      // Will show failure message in UI
+    }
   };
 
   const handleContinue = () => {
@@ -141,8 +147,29 @@ export function Step2Visuals() {
     store.setStep(3);
   };
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      store.setStep(1);
+      store.setStepStatus(1, 'active');
+    }
+  };
+
+  // Check if at least one mockup image was generated
+  const hasAnyImage = assets.some((a) => a.status === 'done' && a.imageData);
+  const allFailed = allDone && assets.every((a) => a.status === 'error');
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Back Button */}
+      <button
+        onClick={handleBack}
+        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
+
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-bold">2</div>
@@ -198,7 +225,7 @@ export function Step2Visuals() {
                   <span className="text-xs text-green-600">Done (text only)</span>
                 )}
                 {asset.status === 'error' && (
-                  <span className="text-xs text-red-500">Failed — skipped</span>
+                  <span className="text-xs text-red-500">Failed \u2014 skipped</span>
                 )}
               </div>
 
@@ -222,9 +249,19 @@ export function Step2Visuals() {
         {/* Completion */}
         {allDone && (
           <div className="mt-6 pt-4 border-t border-gray-100">
-            <p className="text-sm text-gray-600 mb-4">
-              Sketches and mockups generated! Moving to fabric details...
-            </p>
+            {allFailed ? (
+              <p className="text-sm text-red-600 mb-4">
+                Failed to generate mockups.
+              </p>
+            ) : hasAnyImage ? (
+              <p className="text-sm text-green-600 mb-4">
+                Mockups generated successfully &#10003;
+              </p>
+            ) : (
+              <p className="text-sm text-gray-600 mb-4">
+                Generation complete (text descriptions only).
+              </p>
+            )}
             <Button onClick={handleContinue} size="lg" className="w-full">
               Continue to Fabric & Trims
               <ArrowRight className="w-4 h-4 ml-2" />

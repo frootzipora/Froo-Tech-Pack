@@ -4,11 +4,10 @@ import React, { useState } from 'react';
 import { useTechPackStore } from '@/store/techpack-store';
 import { Button } from '@/components/ui/Button';
 import { FileUpload } from '@/components/ui/FileUpload';
-import { CheckCircle2, Table, FileSpreadsheet, Upload } from 'lucide-react';
+import { CheckCircle2, Table, FileSpreadsheet, Upload, ArrowLeft } from 'lucide-react';
 
 type SizeChartMode = 'choose' | 'repeat' | 'new' | 'upload' | 'done';
 
-// Sample size chart templates
 const SIZE_CHART_TEMPLATES: Record<string, { name: string; headers: string[]; rows: string[][] }> = {
   'baby-dress': {
     name: 'Baby Dress',
@@ -74,7 +73,7 @@ const SIZE_CHART_TEMPLATES: Record<string, { name: string; headers: string[]; ro
   },
 };
 
-export function Step4SizeChart() {
+export function Step4SizeChart({ onBack }: { onBack?: () => void }) {
   const store = useTechPackStore();
   const { data } = store;
   const [mode, setMode] = useState<SizeChartMode>('choose');
@@ -99,10 +98,28 @@ export function Step4SizeChart() {
   const handleFinish = () => {
     store.setStepStatus(4, 'completed');
     store.setDraft(false);
+    store.saveCurrent();
+  };
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      store.setStep(3);
+      store.setStepStatus(3, 'active');
+    }
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Back Button */}
+      <button
+        onClick={handleBack}
+        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
+
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-bold">4</div>
@@ -148,7 +165,7 @@ export function Step4SizeChart() {
           </div>
         )}
 
-        {/* Repeat Body - Template Selection */}
+        {/* Template Selection */}
         {(mode === 'repeat' || mode === 'new') && (
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -198,7 +215,7 @@ export function Step4SizeChart() {
           </div>
         )}
 
-        {/* Done - Preview */}
+        {/* Done */}
         {mode === 'done' && data.sizeChart && (
           <div>
             <div className="flex items-center gap-2 text-green-600 mb-4">
@@ -227,7 +244,7 @@ export function Step4SizeChart() {
                             className={`border border-gray-200 px-3 py-2 ${
                               ci === 0 ? 'font-medium text-gray-700' : 'text-gray-600'
                             } ${
-                              data.sampleSize && data.sizeChart?.data?.[0][ci] === data.sampleSize
+                              data.sampleSize && data.sampleSize !== 'TBD' && data.sizeChart?.data?.[0][ci] === data.sampleSize
                                 ? 'bg-yellow-50 font-bold'
                                 : ''
                             }`}
@@ -239,7 +256,7 @@ export function Step4SizeChart() {
                     ))}
                   </tbody>
                 </table>
-                {data.sampleSize && (
+                {data.sampleSize && data.sampleSize !== 'TBD' && (
                   <p className="text-xs text-gray-400 mt-2">Sample size {data.sampleSize} highlighted</p>
                 )}
               </div>

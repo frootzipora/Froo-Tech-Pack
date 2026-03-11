@@ -1,28 +1,56 @@
 import { create } from 'zustand';
-import { TechPackData, ChatMessage, StepStatus, Brand, Category, Season, SampleSize, DesignNotes, FabricInfo, TrimInfo, GeneratedVisuals, SizeChart } from '@/lib/types';
+import {
+  TechPackData, ChatMessage, StepStatus, Brand, Category, Season,
+  SampleSize, DesignNotes, FabricInfo, TrimInfo, GeneratedVisuals,
+  SizeChart, SavedTechPack, GarmentType, Fit, ClosureType, WaistType, TBD,
+} from '@/lib/types';
 import { v4 as uuid } from 'uuid';
 
+const STORAGE_KEY = 'techpack_saved_packs';
+
+function loadSavedPacks(): SavedTechPack[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistPacks(packs: SavedTechPack[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(packs));
+  } catch {
+    // storage full or unavailable
+  }
+}
+
 interface TechPackStore {
-  // Tech pack data
   data: TechPackData;
-
-  // Chat messages
   messages: ChatMessage[];
-
-  // Loading states
   isAnalyzing: boolean;
   isGenerating: boolean;
   isSuggesting: boolean;
+
+  // Dashboard
+  savedPacks: SavedTechPack[];
+  loadSavedPacks: () => void;
 
   // Actions - Step navigation
   setStep: (step: number) => void;
   setStepStatus: (step: number, status: StepStatus) => void;
 
   // Actions - Step 1
-  setBrand: (brand: Brand) => void;
-  setCategory: (category: Category) => void;
-  setSeason: (season: Season) => void;
-  setSampleSize: (size: SampleSize) => void;
+  setBrand: (brand: Brand | typeof TBD) => void;
+  setCategory: (category: Category | typeof TBD) => void;
+  setSeason: (season: Season | typeof TBD) => void;
+  setSampleSize: (size: SampleSize | typeof TBD) => void;
+  setGarmentType: (type: GarmentType | typeof TBD) => void;
+  setFit: (fit: Fit | typeof TBD) => void;
+  setClosureType: (closure: ClosureType | typeof TBD) => void;
+  setWaistType: (waist: WaistType | typeof TBD) => void;
   setSampleNumber: (num: string) => void;
   addInspirationImage: (url: string) => void;
   setSampleDescription: (desc: string) => void;
@@ -36,7 +64,7 @@ interface TechPackStore {
 
   // Actions - Step 3
   setBaseFabric: (fabric: FabricInfo) => void;
-  setLining: (lining: FabricInfo) => void;
+  setLining: (lining: FabricInfo | undefined) => void;
   addTrim: (trim: TrimInfo) => void;
   updateTrim: (index: number, trim: TrimInfo) => void;
   setFabricStepSkipped: (skipped: boolean) => void;
@@ -56,29 +84,42 @@ interface TechPackStore {
   // Actions - Meta
   setDraft: (v: boolean) => void;
   reset: () => void;
+
+  // Save / Load
+  saveCurrent: () => void;
+  loadTechPack: (id: string) => void;
+  deleteTechPack: (id: string) => void;
 }
 
-const initialData: TechPackData = {
-  inspirationImages: [],
-  sampleDescription: '',
-  clarifications: {},
-  detectedFields: [],
-  visuals: { detailCallouts: [] },
-  trims: [],
-  fabricStepSkipped: false,
-  currentStep: 1,
-  stepStatuses: ['active', 'pending', 'pending', 'pending'],
-  isDraft: true,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-};
+function createInitialData(): TechPackData {
+  return {
+    id: uuid(),
+    inspirationImages: [],
+    sampleDescription: '',
+    clarifications: {},
+    detectedFields: [],
+    visuals: { detailCallouts: [] },
+    trims: [],
+    fabricStepSkipped: false,
+    currentStep: 1,
+    stepStatuses: ['active', 'pending', 'pending', 'pending'],
+    isDraft: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
 
-export const useTechPackStore = create<TechPackStore>((set) => ({
-  data: { ...initialData },
+export const useTechPackStore = create<TechPackStore>((set, get) => ({
+  data: createInitialData(),
   messages: [],
   isAnalyzing: false,
   isGenerating: false,
   isSuggesting: false,
+  savedPacks: [],
+
+  loadSavedPacks: () => {
+    set({ savedPacks: loadSavedPacks() });
+  },
 
   setStep: (step) =>
     set((s) => ({
@@ -103,6 +144,18 @@ export const useTechPackStore = create<TechPackStore>((set) => ({
 
   setSampleSize: (sampleSize) =>
     set((s) => ({ data: { ...s.data, sampleSize, updatedAt: new Date().toISOString() } })),
+
+  setGarmentType: (garmentType) =>
+    set((s) => ({ data: { ...s.data, garmentType, updatedAt: new Date().toISOString() } })),
+
+  setFit: (fit) =>
+    set((s) => ({ data: { ...s.data, fit, updatedAt: new Date().toISOString() } })),
+
+  setClosureType: (closureType) =>
+    set((s) => ({ data: { ...s.data, closureType, updatedAt: new Date().toISOString() } })),
+
+  setWaistType: (waistType) =>
+    set((s) => ({ data: { ...s.data, waistType, updatedAt: new Date().toISOString() } })),
 
   setSampleNumber: (sampleNumber) =>
     set((s) => ({ data: { ...s.data, sampleNumber, updatedAt: new Date().toISOString() } })),
@@ -195,5 +248,43 @@ export const useTechPackStore = create<TechPackStore>((set) => ({
   setDraft: (v) =>
     set((s) => ({ data: { ...s.data, isDraft: v, updatedAt: new Date().toISOString() } })),
 
-  reset: () => set({ data: { ...initialData, createdAt: new Date().toISOString() }, messages: [] }),
+  reset: () => set({ data: createInitialData(), messages: [] }),
+
+  saveCurrent: () => {
+    const state = get();
+    const { data } = state;
+    const now = new Date().toISOString();
+    const name = `${data.brand && data.brand !== 'TBD' ? data.brand : 'Draft'} — ${data.sampleDescription?.slice(0, 40) || 'Untitled'}`;
+    const pack: SavedTechPack = {
+      id: data.id,
+      data: { ...data, updatedAt: now },
+      name,
+      updatedAt: now,
+      createdAt: data.createdAt,
+    };
+
+    const packs = loadSavedPacks();
+    const idx = packs.findIndex((p) => p.id === data.id);
+    if (idx >= 0) {
+      packs[idx] = pack;
+    } else {
+      packs.unshift(pack);
+    }
+    persistPacks(packs);
+    set({ savedPacks: packs });
+  },
+
+  loadTechPack: (id) => {
+    const packs = loadSavedPacks();
+    const pack = packs.find((p) => p.id === id);
+    if (pack) {
+      set({ data: { ...pack.data }, messages: [], savedPacks: packs });
+    }
+  },
+
+  deleteTechPack: (id) => {
+    const packs = loadSavedPacks().filter((p) => p.id !== id);
+    persistPacks(packs);
+    set({ savedPacks: packs });
+  },
 }));

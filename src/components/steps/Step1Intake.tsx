@@ -2,49 +2,94 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useTechPackStore } from '@/store/techpack-store';
-import { Brand, Category, Season, SampleSize, DesignNotes } from '@/lib/types';
+import {
+  Brand, Category, Season, SampleSize, DesignNotes,
+  GarmentType, Fit, ClosureType, WaistType, TBD,
+} from '@/lib/types';
 import { getNextSampleNumber } from '@/lib/sample-numbers';
 import { OptionButtons } from '@/components/ui/OptionButtons';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { Button } from '@/components/ui/Button';
-import { Loader2, ImageIcon, CheckCircle2, Edit3 } from 'lucide-react';
+import { Loader2, ImageIcon, CheckCircle2, Edit3, ArrowLeft } from 'lucide-react';
 
 type Phase = 'upload' | 'info-gathering' | 'analyzing' | 'clarifying' | 'review' | 'done';
 
-const BRANDS: { label: string; value: Brand }[] = [
+const BRANDS: { label: string; value: string }[] = [
   { label: 'Froo', value: 'Froo' },
   { label: 'Sweet Threads', value: 'Sweet Threads' },
   { label: 'Prairie', value: 'Prairie' },
   { label: 'Soirée', value: 'Soirée' },
+  { label: 'Not sure \u2013 come back later', value: TBD },
 ];
 
-const CATEGORIES: { label: string; value: Category }[] = [
+const CATEGORIES: { label: string; value: string }[] = [
   { label: 'Baby', value: 'Baby' },
   { label: 'Girls', value: 'Girls' },
   { label: 'Boys', value: 'Boys' },
   { label: 'Preteen', value: 'Preteen' },
   { label: 'Teen', value: 'Teen' },
+  { label: 'Not sure \u2013 come back later', value: TBD },
 ];
 
-const SEASONS: { label: string; value: Season }[] = [
-  { label: 'Spring', value: 'Spring' },
-  { label: 'Summer', value: 'Summer' },
-  { label: 'Fall', value: 'Fall' },
-  { label: 'Winter', value: 'Winter' },
-  { label: 'Resort', value: 'Resort' },
-  { label: 'Holiday', value: 'Holiday' },
+const SEASONS: { label: string; value: string }[] = [
+  { label: 'SS27', value: 'SS27' },
+  { label: 'AW27', value: 'AW27' },
+  { label: 'Not sure \u2013 come back later', value: TBD },
 ];
 
-const SAMPLE_SIZES: { label: string; value: SampleSize }[] = [
+const SAMPLE_SIZES: { label: string; value: string }[] = [
   { label: '2', value: '2' },
   { label: '6', value: '6' },
   { label: '8', value: '8' },
   { label: '16', value: '16' },
   { label: '18', value: '18' },
   { label: 'M', value: 'M' },
+  { label: 'Not sure \u2013 come back later', value: TBD },
 ];
 
-export function Step1Intake() {
+const GARMENT_TYPES: { label: string; value: string }[] = [
+  { label: 'Dress', value: 'Dress' },
+  { label: 'Top', value: 'Top' },
+  { label: 'Blouse', value: 'Blouse' },
+  { label: 'Skirt', value: 'Skirt' },
+  { label: 'Pants', value: 'Pants' },
+  { label: 'Shorts', value: 'Shorts' },
+  { label: 'Jumpsuit', value: 'Jumpsuit' },
+  { label: 'Jacket', value: 'Jacket' },
+  { label: 'Coat', value: 'Coat' },
+  { label: 'Not sure \u2013 come back later', value: TBD },
+];
+
+const FITS: { label: string; value: string }[] = [
+  { label: 'Slim', value: 'Slim' },
+  { label: 'Regular', value: 'Regular' },
+  { label: 'Relaxed', value: 'Relaxed' },
+  { label: 'Oversized', value: 'Oversized' },
+  { label: 'Not sure \u2013 come back later', value: TBD },
+];
+
+const CLOSURE_TYPES: { label: string; value: string }[] = [
+  { label: 'Buttons', value: 'Buttons' },
+  { label: 'Zipper', value: 'Zipper' },
+  { label: 'Hook & Eye', value: 'Hook & Eye' },
+  { label: 'Snap', value: 'Snap' },
+  { label: 'Tie', value: 'Tie' },
+  { label: 'Elastic', value: 'Elastic' },
+  { label: 'None', value: 'None' },
+  { label: 'Not sure \u2013 come back later', value: TBD },
+];
+
+const WAIST_TYPES: { label: string; value: string }[] = [
+  { label: 'Elastic', value: 'Elastic' },
+  { label: 'Flat', value: 'Flat' },
+  { label: 'Drop Waist', value: 'Drop Waist' },
+  { label: 'Empire', value: 'Empire' },
+  { label: 'Natural', value: 'Natural' },
+  { label: 'N/A', value: 'N/A' },
+  { label: 'Not sure \u2013 come back later', value: TBD },
+];
+
+export function Step1Intake({ onBack }: { onBack?: () => void }) {
   const store = useTechPackStore();
   const { data } = store;
   const [phase, setPhase] = useState<Phase>('upload');
@@ -70,7 +115,6 @@ export function Step1Intake() {
   };
 
   const handleStartAnalysis = async () => {
-    // Auto-assign sample number
     const sampleNum = getNextSampleNumber();
     store.setSampleNumber(sampleNum);
     store.setSampleDescription(description);
@@ -79,7 +123,6 @@ export function Step1Intake() {
     setIsAnalyzing(true);
 
     try {
-      // Extract base64 from data URL
       let imageBase64 = '';
       let imageMediaType = 'image/jpeg';
       if (uploadedImages.length > 0) {
@@ -92,11 +135,7 @@ export function Step1Intake() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64,
-          imageMediaType,
-          description,
-        }),
+        body: JSON.stringify({ imageBase64, imageMediaType, description }),
       });
 
       if (!res.ok) throw new Error('Analysis failed');
@@ -104,13 +143,11 @@ export function Step1Intake() {
       const result = await res.json();
       setAnalysis(result);
 
-      // Auto-detect category if suggested
       if (result.suggestedCategory && !data.category) {
         store.setCategory(result.suggestedCategory);
         store.addDetectedField('category');
       }
 
-      // Set design notes
       const notes: DesignNotes = {
         silhouette: result.silhouette || '',
         construction: result.construction || '',
@@ -122,7 +159,6 @@ export function Step1Intake() {
       };
       store.setDesignNotes(notes);
 
-      // Set clarifying questions
       if (result.clarifyingQuestions?.length > 0) {
         setClarifyingQuestions(result.clarifyingQuestions);
         setPhase('clarifying');
@@ -131,7 +167,6 @@ export function Step1Intake() {
       }
     } catch (err) {
       console.error(err);
-      // Proceed even if analysis fails
       setPhase('info-gathering');
     } finally {
       setIsAnalyzing(false);
@@ -168,16 +203,9 @@ export function Step1Intake() {
   };
 
   const handleSaveEditedNotes = () => {
-    // Parse edited notes back into structure
     const lines = editedNotes.split('\n');
     const notes: DesignNotes = {
-      silhouette: '',
-      construction: '',
-      closures: '',
-      neckline: '',
-      hemFinish: '',
-      trims: '',
-      overall: '',
+      silhouette: '', construction: '', closures: '', neckline: '', hemFinish: '', trims: '', overall: '',
     };
 
     for (const line of lines) {
@@ -195,11 +223,21 @@ export function Step1Intake() {
     setEditingNotes(false);
   };
 
-  const canProceedToAnalysis = uploadedImages.length > 0 && data.brand && data.category && data.season && data.sampleSize;
+  const canProceedToAnalysis =
+    uploadedImages.length > 0 && data.brand && data.category && data.season && data.sampleSize;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Upload Section */}
+      {/* Back Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+      )}
+
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-bold">1</div>
@@ -230,7 +268,7 @@ export function Step1Intake() {
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe the garment — fabric, details, construction notes, anything relevant..."
+            placeholder="Describe the garment \u2014 fabric, details, construction notes, anything relevant..."
             className="w-full h-28 px-4 py-3 rounded-xl border border-gray-300 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
           />
         </div>
@@ -266,12 +304,52 @@ export function Step1Intake() {
         </div>
 
         {/* Sample Size */}
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Sample Size</label>
           <OptionButtons
             options={SAMPLE_SIZES}
             selected={data.sampleSize}
             onSelect={(v) => store.setSampleSize(v as SampleSize)}
+          />
+        </div>
+
+        {/* Garment Type */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Garment Type</label>
+          <OptionButtons
+            options={GARMENT_TYPES}
+            selected={data.garmentType}
+            onSelect={(v) => store.setGarmentType(v as GarmentType)}
+          />
+        </div>
+
+        {/* Fit */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Fit</label>
+          <OptionButtons
+            options={FITS}
+            selected={data.fit}
+            onSelect={(v) => store.setFit(v as Fit)}
+          />
+        </div>
+
+        {/* Closure Type */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Closure Type</label>
+          <OptionButtons
+            options={CLOSURE_TYPES}
+            selected={data.closureType}
+            onSelect={(v) => store.setClosureType(v as ClosureType)}
+          />
+        </div>
+
+        {/* Waist Type */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Waist Type</label>
+          <OptionButtons
+            options={WAIST_TYPES}
+            selected={data.waistType}
+            onSelect={(v) => store.setWaistType(v as WaistType)}
           />
         </div>
 
@@ -379,7 +457,7 @@ export function Step1Intake() {
         </div>
       )}
 
-      {/* Analysis Details (if available) */}
+      {/* Detected Trims */}
       {analysis?.detectedTrims && phase !== 'analyzing' && (
         <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4">
           <p className="text-xs font-semibold text-gray-500 mb-2">DETECTED TRIMS & DETAILS</p>

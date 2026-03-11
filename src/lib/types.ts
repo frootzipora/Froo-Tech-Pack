@@ -1,7 +1,13 @@
 export type Brand = 'Froo' | 'Sweet Threads' | 'Prairie' | 'Soirée';
 export type Category = 'Baby' | 'Girls' | 'Boys' | 'Preteen' | 'Teen';
-export type Season = 'Spring' | 'Summer' | 'Fall' | 'Winter' | 'Resort' | 'Holiday';
+export type Season = 'SS27' | 'AW27';
 export type SampleSize = '2' | '6' | '8' | '16' | '18' | 'M';
+export type GarmentType = 'Dress' | 'Top' | 'Blouse' | 'Skirt' | 'Pants' | 'Shorts' | 'Jumpsuit' | 'Jacket' | 'Coat';
+export type Fit = 'Slim' | 'Regular' | 'Relaxed' | 'Oversized';
+export type ClosureType = 'Buttons' | 'Zipper' | 'Hook & Eye' | 'Snap' | 'Tie' | 'Elastic' | 'None';
+export type WaistType = 'Elastic' | 'Flat' | 'Drop Waist' | 'Empire' | 'Natural' | 'N/A';
+
+export const TBD = 'TBD' as const;
 
 export interface BrandTheme {
   primary: string;
@@ -29,6 +35,7 @@ export interface DesignNotes {
 export interface FabricInfo {
   type: 'uploaded' | 'ai-sourced' | 'factory-source';
   cardImage?: string;
+  referenceImage?: string;
   description: string;
   color?: string;
   composition?: string;
@@ -41,6 +48,7 @@ export interface TrimInfo {
   trimType: string;
   type: 'uploaded' | 'ai-sourced' | 'factory-source';
   cardImage?: string;
+  referenceImage?: string;
   description: string;
   color?: string;
   quantity?: string;
@@ -68,11 +76,17 @@ export interface SizeChart {
 export type StepStatus = 'pending' | 'active' | 'completed' | 'skipped';
 
 export interface TechPackData {
+  id: string;
+
   // Step 1
-  brand?: Brand;
-  category?: Category;
-  season?: Season;
-  sampleSize?: SampleSize;
+  brand?: Brand | typeof TBD;
+  category?: Category | typeof TBD;
+  season?: Season | typeof TBD;
+  sampleSize?: SampleSize | typeof TBD;
+  garmentType?: GarmentType | typeof TBD;
+  fit?: Fit | typeof TBD;
+  closureType?: ClosureType | typeof TBD;
+  waistType?: WaistType | typeof TBD;
   sampleNumber?: string;
   inspirationImages: string[];
   sampleDescription: string;
@@ -103,6 +117,8 @@ export interface TechPackData {
 export const GARMENT_TYPES_NO_WAIST = ['top', 'blouse', 'shirt', 'tee', 'tank', 'vest', 'jacket', 'coat', 'cape', 'poncho'];
 export const GARMENT_TYPES_NO_SLEEVE = ['dress', 'skirt', 'pants', 'shorts', 'leggings'];
 
+export const KEY_TRIMS = ['Buttons', 'Lace', 'Contrast Fabric', 'Embroidery', 'Ribbon', 'Piping', 'Appliqué'];
+
 export interface ChatMessage {
   id: string;
   role: 'assistant' | 'user' | 'system';
@@ -110,4 +126,12 @@ export interface ChatMessage {
   options?: { label: string; value: string }[];
   images?: string[];
   timestamp: number;
+}
+
+export interface SavedTechPack {
+  id: string;
+  data: TechPackData;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
 }
