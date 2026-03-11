@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     // Use Gemini 2.0 Flash with image generation enabled
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash-exp-image-generation',
       generationConfig: {
         // @ts-expect-error - responseModalities is supported but not yet in the type definitions
         responseModalities: ['TEXT', 'IMAGE'],

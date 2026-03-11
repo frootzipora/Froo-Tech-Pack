@@ -92,7 +92,12 @@ const WAIST_TYPES: { label: string; value: string }[] = [
 export function Step1Intake({ onBack }: { onBack?: () => void }) {
   const store = useTechPackStore();
   const { data } = store;
-  const [phase, setPhase] = useState<Phase>('upload');
+  // Restore phase if step was already completed or has design notes
+  const initialPhase = (): Phase => {
+    if (data.stepStatuses[0] === 'completed' || data.designNotes) return 'review';
+    return 'upload';
+  };
+  const [phase, setPhase] = useState<Phase>(initialPhase);
   const [description, setDescription] = useState(data.sampleDescription || '');
   const [uploadedImages, setUploadedImages] = useState<string[]>(data.inspirationImages || []);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -167,7 +172,7 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
       }
     } catch (err) {
       console.error(err);
-      setPhase('info-gathering');
+      setPhase('upload');
     } finally {
       setIsAnalyzing(false);
     }

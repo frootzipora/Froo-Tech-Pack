@@ -19,10 +19,19 @@ export default function Home() {
   const [view, setView] = useState<View>('dashboard');
   const [showPreview, setShowPreview] = useState(false);
 
+  const allComplete = data.stepStatuses.every((s) => s === 'completed');
+
   useEffect(() => {
     store.loadSavedPacks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-show preview when all steps complete
+  useEffect(() => {
+    if (allComplete && view === 'editor') {
+      setShowPreview(true);
+    }
+  }, [allComplete, view]);
 
   const steps = [
     { label: 'Intake', status: data.stepStatuses[0] },
@@ -30,8 +39,6 @@ export default function Home() {
     { label: 'Fabric', status: data.stepStatuses[2] },
     { label: 'Size Chart', status: data.stepStatuses[3] },
   ];
-
-  const allComplete = data.stepStatuses.every((s) => s === 'completed');
 
   const handleStepClick = (step: number) => {
     store.setStep(step);
@@ -93,7 +100,7 @@ export default function Home() {
   }
 
   // Preview view (from dashboard click)
-  if (view === 'preview' || (showPreview && !allComplete)) {
+  if (view === 'preview') {
     return (
       <div className="min-h-screen bg-gray-50">
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50 no-print">
@@ -130,7 +137,7 @@ export default function Home() {
   }
 
   const renderStep = () => {
-    if (showPreview || allComplete) {
+    if (showPreview) {
       return (
         <TechPackPreview
           onBackToDashboard={handleBackToDashboard}
