@@ -74,8 +74,10 @@ Return ONLY the JSON object, no other text.`,
     }
 
     if (!response || !response.content || !Array.isArray(response.content)) {
-      console.error('Unexpected API response:', JSON.stringify(response));
-      throw new Error('Unexpected response format from Anthropic API');
+      const keys = response ? Object.keys(response).join(', ') : 'null';
+      const type = response ? typeof response : 'null';
+      console.error('Unexpected API response:', JSON.stringify(response).slice(0, 500));
+      throw new Error(`Unexpected response (type=${type}, keys=${keys})`);
     }
 
     const textBlock = response.content.find((b: { type: string }) => b.type === 'text');
