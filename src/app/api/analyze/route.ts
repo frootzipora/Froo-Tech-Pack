@@ -60,13 +60,25 @@ The clarifying questions should be targeted follow-ups needed for factory clarit
 Return ONLY the JSON object, no other text.`,
     });
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: contentBlocks }],
-    });
+    let response;
+    try {
+      response = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: contentBlocks }],
+      });
+    } catch (apiError) {
+      console.error('Anthropic API error:', apiError);
+      const msg = apiError instanceof Error ? apiError.message : 'API call failed';
+      throw new Error(`Anthropic API error: ${msg}`);
+    }
 
-    const textBlock = response.content.find((b) => b.type === 'text');
+    if (!response || !response.content || !Array.isArray(response.content)) {
+      console.error('Unexpected API response:', JSON.stringify(response));
+      throw new Error('Unexpected response format from Anthropic API');
+    }
+
+    const textBlock = response.content.find((b: { type: string }) => b.type === 'text');
     if (!textBlock || textBlock.type !== 'text') {
       throw new Error('No text response from Claude');
     }
