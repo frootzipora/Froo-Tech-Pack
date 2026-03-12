@@ -115,6 +115,41 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [phase, currentQuestionIdx]);
 
+  // Resize image to max dimensions and compress as JPEG
+  const resizeImage = (dataUrl: string, maxDim = 1024): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width <= maxDim && height <= maxDim) {
+          // Already small enough, just re-encode as JPEG for smaller size
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+          return;
+        }
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => resolve(dataUrl); // fallback to original
+      img.src = dataUrl;
+    });
+  };
+
   const handleImageUpload = (_file: File, dataUrl: string) => {
     setUploadedImages((prev) => [...prev, dataUrl]);
     store.addInspirationImage(dataUrl);
@@ -133,15 +168,12 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
       let imageBase64 = '';
       let imageMediaType = 'image/jpeg';
       if (uploadedImages.length > 0) {
-        const parts = uploadedImages[0].split(',');
+        // Resize and compress the image before sending
+        const resized = await resizeImage(uploadedImages[0]);
+        const parts = resized.split(',');
         imageBase64 = parts[1] || '';
         const mimeMatch = parts[0].match(/data:(.*?);/);
         if (mimeMatch) imageMediaType = mimeMatch[1];
-      }
-
-      // Warn if image is very large (>10MB base64)
-      if (imageBase64.length > 10 * 1024 * 1024) {
-        throw new Error('Image is too large. Please use an image under 10MB.');
       }
 
       const res = await fetch('/api/analyze', {
