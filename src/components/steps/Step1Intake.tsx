@@ -190,6 +190,11 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
       const result = await res.json();
       setAnalysis(result);
 
+      // Show notice if using fallback mode
+      if (result._fallback) {
+        setErrorMessage('AI analysis unavailable — using basic analysis. Edit the notes below to add details.');
+      }
+
       if (result.suggestedCategory && !data.category) {
         store.setCategory(result.suggestedCategory);
         store.addDetectedField('category');
@@ -408,9 +413,13 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
           </div>
         )}
 
-        {/* Error Message */}
-        {errorMessage && (
-          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        {/* Error / Warning Message */}
+        {errorMessage && phase !== 'review' && phase !== 'clarifying' && (
+          <div className={`mb-4 px-4 py-3 rounded-xl text-sm ${
+            errorMessage.includes('unavailable')
+              ? 'bg-amber-50 border border-amber-200 text-amber-700'
+              : 'bg-red-50 border border-red-200 text-red-700'
+          }`}>
             {errorMessage}
           </div>
         )}
