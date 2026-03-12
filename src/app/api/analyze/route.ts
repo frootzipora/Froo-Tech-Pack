@@ -1,20 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const VALID_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
+type ValidMediaType = typeof VALID_MEDIA_TYPES[number];
+
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json(
+        { error: 'ANTHROPIC_API_KEY is not configured. Add it to your .env.local file.' },
+        { status: 500 }
+      );
+    }
+
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const { imageBase64, imageMediaType, description } = await req.json();
 
     const contentBlocks: Anthropic.ContentBlockParam[] = [];
 
     if (imageBase64) {
+      // Validate and coerce media type
+      const mediaType: ValidMediaType = VALID_MEDIA_TYPES.includes(imageMediaType as ValidMediaType)
+        ? (imageMediaType as ValidMediaType)
+        : 'image/jpeg';
+
       contentBlocks.push({
         type: 'image',
         source: {
           type: 'base64',
-          media_type: imageMediaType || 'image/jpeg',
+          media_type: mediaType,
           data: imageBase64,
         },
       });
@@ -65,8 +81,9 @@ Return ONLY the JSON object, no other text.`,
     return NextResponse.json(analysis);
   } catch (error) {
     console.error('Analysis error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to analyze image. Please check your API key and try again.' },
+      { error: `Analysis failed: ${message}` },
       { status: 500 }
     );
   }

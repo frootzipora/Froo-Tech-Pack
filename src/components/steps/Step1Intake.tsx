@@ -108,6 +108,7 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
   const [editingNotes, setEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -126,6 +127,7 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
 
     setPhase('analyzing');
     setIsAnalyzing(true);
+    setErrorMessage(null);
 
     try {
       let imageBase64 = '';
@@ -137,13 +139,21 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
         if (mimeMatch) imageMediaType = mimeMatch[1];
       }
 
+      // Warn if image is very large (>10MB base64)
+      if (imageBase64.length > 10 * 1024 * 1024) {
+        throw new Error('Image is too large. Please use an image under 10MB.');
+      }
+
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64, imageMediaType, description }),
       });
 
-      if (!res.ok) throw new Error('Analysis failed');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Analysis failed (${res.status})`);
+      }
 
       const result = await res.json();
       setAnalysis(result);
@@ -172,6 +182,7 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
       }
     } catch (err) {
       console.error(err);
+      setErrorMessage(err instanceof Error ? err.message : 'Analysis failed. Please try again.');
       setPhase('upload');
     } finally {
       setIsAnalyzing(false);
@@ -365,6 +376,13 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
           </div>
         )}
 
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            {errorMessage}
+          </div>
+        )}
+
         {/* Analyze Button */}
         {phase === 'upload' && (
           <Button
@@ -373,7 +391,7 @@ export function Step1Intake({ onBack }: { onBack?: () => void }) {
             size="lg"
             className="w-full"
           >
-            Analyze & Continue
+            {errorMessage ? 'Retry Analysis' : 'Analyze & Continue'}
           </Button>
         )}
       </div>
