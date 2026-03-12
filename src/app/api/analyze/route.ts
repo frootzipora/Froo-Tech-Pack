@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 
-const VALID_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
-type ValidMediaType = typeof VALID_MEDIA_TYPES[number];
+const VALID_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export const maxDuration = 60;
 
@@ -15,15 +13,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const { imageBase64, imageMediaType, description } = await req.json();
 
-    const contentBlocks: Anthropic.ContentBlockParam[] = [];
+    // Build content blocks
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const contentBlocks: any[] = [];
 
     if (imageBase64) {
-      // Validate and coerce media type
-      const mediaType: ValidMediaType = VALID_MEDIA_TYPES.includes(imageMediaType as ValidMediaType)
-        ? (imageMediaType as ValidMediaType)
+      const mediaType = VALID_MEDIA_TYPES.includes(imageMediaType)
+        ? imageMediaType
         : 'image/jpeg';
 
       contentBlocks.push({
@@ -60,24 +58,30 @@ The clarifying questions should be targeted follow-ups needed for factory clarit
 Return ONLY the JSON object, no other text.`,
     });
 
-    let response;
-    try {
-      response = await client.messages.create({
+    // Use fetch directly instead of SDK to avoid proxy/SSL issues
+    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
         messages: [{ role: 'user', content: contentBlocks }],
-      });
-    } catch (apiError) {
-      console.error('Anthropic API error:', apiError);
-      const msg = apiError instanceof Error ? apiError.message : 'API call failed';
-      throw new Error(`Anthropic API error: ${msg}`);
+      }),
+    });
+
+    if (!apiRes.ok) {
+      const errText = await apiRes.text();
+      throw new Error(`Anthropic API ${apiRes.status}: ${errText.slice(0, 200)}`);
     }
 
+    const response = await apiRes.json();
+
     if (!response || !response.content || !Array.isArray(response.content)) {
-      const keys = response ? Object.keys(response).join(', ') : 'null';
-      const type = response ? typeof response : 'null';
-      console.error('Unexpected API response:', JSON.stringify(response).slice(0, 500));
-      throw new Error(`Unexpected response (type=${type}, keys=${keys})`);
+      throw new Error(`Unexpected response format: ${JSON.stringify(response).slice(0, 200)}`);
     }
 
     const textBlock = response.content.find((b: { type: string }) => b.type === 'text');

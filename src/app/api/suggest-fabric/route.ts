@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
+    }
+
     const { type, garmentType, designNotes, baseFabricDescription } = await req.json();
 
     let prompt = '';
@@ -42,14 +43,29 @@ Return as JSON array: [{"description": "...", "material": "...", "color": "...",
 Return ONLY the JSON array.`;
     }
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }],
+    // Use fetch directly instead of SDK to avoid proxy/SSL issues
+    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     });
 
-    const textBlock = response.content.find((b) => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
+    if (!apiRes.ok) {
+      const errText = await apiRes.text();
+      throw new Error(`Anthropic API ${apiRes.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const response = await apiRes.json();
+    const textBlock = response.content?.find((b: { type: string }) => b.type === 'text');
+    if (!textBlock?.text) {
       throw new Error('No text response');
     }
 
@@ -62,6 +78,7 @@ Return ONLY the JSON array.`;
     return NextResponse.json({ suggestions });
   } catch (error) {
     console.error('Suggestion error:', error);
-    return NextResponse.json({ error: 'Failed to get suggestions' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to get suggestions';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
