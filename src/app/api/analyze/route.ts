@@ -73,9 +73,19 @@ Return ONLY the JSON object, no other text.`,
       }),
     });
 
+    const contentType = apiRes.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await apiRes.text();
+      console.error('Non-JSON response from API:', text.slice(0, 300));
+      throw new Error(
+        'Your network is blocking access to the Anthropic API. ' +
+        'Try connecting to a different network (e.g., mobile hotspot) or disable your proxy/VPN.'
+      );
+    }
+
     if (!apiRes.ok) {
-      const errText = await apiRes.text();
-      throw new Error(`Anthropic API ${apiRes.status}: ${errText.slice(0, 200)}`);
+      const errData = await apiRes.json();
+      throw new Error(`Anthropic API ${apiRes.status}: ${errData.error?.message || JSON.stringify(errData).slice(0, 200)}`);
     }
 
     const response = await apiRes.json();
