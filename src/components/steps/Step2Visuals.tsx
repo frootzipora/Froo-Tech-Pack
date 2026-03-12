@@ -225,7 +225,7 @@ export function Step2Visuals({ onBack }: { onBack?: () => void }) {
                   <span className="text-xs text-green-600">Done (text only)</span>
                 )}
                 {asset.status === 'error' && (
-                  <span className="text-xs text-red-500">Failed \u2014 skipped</span>
+                  <span className="text-xs text-red-500">{"Failed \u2014 skipped"}</span>
                 )}
               </div>
 

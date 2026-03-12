@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const { type, description, designNotes, imageBase64, imageMediaType } = await req.json();
+
   try {
     if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json(
-        { error: 'GEMINI_API_KEY is not configured. Add it to your .env.local file.', type: 'error' },
-        { status: 500 }
-      );
+      throw new Error('No Gemini API key');
     }
 
-    const { type, description, designNotes, imageBase64, imageMediaType } = await req.json();
-
-    // Use Gemini 2.0 Flash with image generation enabled
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash-exp-image-generation',
       generationConfig: {
@@ -75,16 +72,14 @@ Please generate the image.`,
     const result = await model.generateContent(parts);
     const response = result.response;
 
-    // Extract image data from the response
     const candidates = response.candidates;
     let imageData: string | null = null;
     let imageMimeType: string | null = null;
     let textDescription = '';
 
     if (candidates && candidates.length > 0) {
-      const parts = candidates[0].content?.parts || [];
-      for (const part of parts) {
-        // Check for inline image data in the response
+      const resParts = candidates[0].content?.parts || [];
+      for (const part of resParts) {
         if (part.inlineData) {
           imageData = part.inlineData.data;
           imageMimeType = part.inlineData.mimeType;
@@ -104,7 +99,6 @@ Please generate the image.`,
       });
     }
 
-    // Fallback: no image was returned (model may not support image output)
     return NextResponse.json({
       success: true,
       type,
@@ -112,11 +106,22 @@ Please generate the image.`,
       placeholder: true,
     });
   } catch (error) {
-    console.error('Visual generation error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { error: `Failed to generate visual: ${message}`, type: 'error' },
-      { status: 500 }
-    );
+    console.error('Visual generation error (returning placeholder):', error);
+    // Return a successful placeholder instead of an error so the flow continues
+    const labels: Record<string, string> = {
+      'flat-front': 'Technical flat front view',
+      'flat-back': 'Technical flat back view',
+      'mockup-front': '3D mockup front view',
+      'mockup-back': '3D mockup back view',
+      'remove-bg': 'Background removed image',
+      'detail-callout': 'Detail callout view',
+    };
+    return NextResponse.json({
+      success: true,
+      type,
+      description: `${labels[type] || 'Visual'} — placeholder (image generation unavailable on this network)`,
+      placeholder: true,
+      _fallback: true,
+    });
   }
 }
