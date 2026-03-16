@@ -2,7 +2,6 @@ import crypto from 'crypto';
 
 /**
  * Verify that a request came from Slack using the signing secret.
- * https://api.slack.com/authentication/verifying-requests-from-slack
  */
 export function verifySlackRequest(
   signingSecret: string,
@@ -10,7 +9,7 @@ export function verifySlackRequest(
   body: string,
   signature: string
 ): boolean {
-  // Reject requests older than 5 minutes to prevent replay attacks
+  // Reject requests older than 5 minutes
   const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 60 * 5;
   if (parseInt(timestamp, 10) < fiveMinutesAgo) {
     return false;
@@ -24,8 +23,12 @@ export function verifySlackRequest(
       .update(sigBasestring, 'utf8')
       .digest('hex');
 
-  return crypto.timingSafeEqual(
-    Buffer.from(mySignature, 'utf8'),
-    Buffer.from(signature, 'utf8')
-  );
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(mySignature, 'utf8'),
+      Buffer.from(signature, 'utf8')
+    );
+  } catch {
+    return false;
+  }
 }
